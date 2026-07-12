@@ -393,9 +393,6 @@ function isToday(d){
   const n = new Date();
   return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
 }
-// Smart formatter: shows just the time if the date is today (the normal case),
-// but shows the date too the moment it's a different day — so a rake crossing
-// midnight, or a late correction from yesterday, is immediately obvious.
 function fmtSmart(iso){
   if(!iso) return '&mdash;';
   const d = new Date(iso);
@@ -403,7 +400,6 @@ function fmtSmart(iso){
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// auto-insert colon while typing a 24-hr time box
 function attachTimeAutoformat(input){
   input.addEventListener('input', ()=>{
     let v = input.value.replace(/[^0-9:]/g,'');
@@ -414,8 +410,6 @@ function attachTimeAutoformat(input){
 }
 
 // ---------------- Storage (Google Apps Script backend) ----------------
-// PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL BELOW, between the quotes.
-// See the setup instructions that came with this file for how to get this URL.
 const API_URL = "https://script.google.com/macros/s/AKfycbw_D2crhwsjYsbyKOaICIxlhxFy6h793QJy2uTgsQ458limJv4uDW-XXJimWLlBvicXGQ/exec";
 
 function apiConfigured(){
@@ -436,9 +430,6 @@ async function loadData(){
   }
 }
 
-// Saves ONE record only (not the whole dataset) — the server finds and updates
-// the matching row, or appends a new one, so unrelated entries from other
-// devices are never overwritten.
 async function saveRecordToServer(catKey, keyField, record){
   if(!apiConfigured()){ showToast('Set up API_URL first — see setup instructions'); return false; }
   try{
@@ -476,7 +467,7 @@ function showToast(msg){
 function computeStage(cat, rec){
   let current = null;
   cat.stages.forEach(s=>{ if(rec[s.f]) current = s; });
-  return current; // null = pending
+  return current;
 }
 
 function findByKey(cat, value){
@@ -614,7 +605,6 @@ function wireForm(cat){
       document.getElementById(`f-${cat.key}-${f.key}-date`).value = todayStr();
     }
   });
-  // autofill when typing the key field
   const keyInput = document.getElementById(`f-${cat.key}-${cat.keyField}`);
   keyInput.addEventListener('change', ()=>{
     const rec = findByKey(cat, keyInput.value);
@@ -692,7 +682,6 @@ function renderCombinedCell(c, r){
 function sortForBoard(cat){
   const list = [...DATA[cat.key]];
   if(cat.key === 'bobrn_release'){
-    // Group MCHP together, then PEQP together, then anything unmatched — each group sorted by arrival.
     const order = {MCHP:0, PEQP:1};
     return list.sort((a,b)=>{
       const ga = order[a.sidingCode] ?? 2;
@@ -702,10 +691,8 @@ function sortForBoard(cat){
     });
   }
   if(cat.fields.some(f=>f.key==='arrival')){
-    // Release-type categories (has an Arrival field) — sort by first arrival.
     return list.sort((a,b)=>(a.arrival||'').localeCompare(b.arrival||''));
   }
-  // Loading categories have no Arrival field — sort by Placement, the earliest stage they do have.
   return list.sort((a,b)=>(a.placement||'').localeCompare(b.placement||''));
 }
 
@@ -816,7 +803,7 @@ function renderNboxReleaseCard(cat){
 
   DATA[cat.key].forEach(r=>{
     const stage = computeNboxStage(r);
-    if(!stage) return; // nothing entered yet, skip
+    if(!stage) return;
     const upper = (r.rakeName||'').toUpperCase();
     const match = GROUP_CODES.find(c=>upper.includes(c));
     const g = match ? 'N'+match : 'OTHER';
@@ -1042,7 +1029,6 @@ function downloadPdf(){
     const margin = 28;
     const headerH = 46;
 
-    // ---- Page 1: Header + BOBRN Release (left) + NBOX Release (right) ----
     doc.setFont('helvetica','bold');
     doc.setFontSize(14);
     doc.setTextColor(18,32,43);
@@ -1063,7 +1049,6 @@ function downloadPdf(){
     drawCompactBox(doc, margin, boxTop, colW, boxH, 'BOBRN RELEASE', bobrnReleaseLines(cats.bobrn_release));
     drawCompactBox(doc, margin + colW + colGap, boxTop, colW, boxH, 'NBOX RELEASE', nboxReleaseLines(cats.nbox_release));
 
-    // ---- Page 2: 4 Loading categories in a 2x2 grid ----
     doc.addPage();
     doc.setFont('helvetica','bold');
     doc.setFontSize(14);
@@ -1187,9 +1172,6 @@ setInterval(()=>{
   el.style.color = secs > 20 ? '#e07a6f' : '#7A8B93';
 }, 1000);
 
-// Force an immediate refresh the moment the tab/window regains focus —
-// browsers throttle background-tab timers, so a laptop tab left in the
-// background can otherwise lag behind until this fires.
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible') refreshLoop();
 });
