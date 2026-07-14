@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Paradeep Rake Tracker (ECoR)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  :root{
+    --bg-main:#EFF1EC;
+    --bg-panel:#FFFFFF;
+    --board-bg:#0E1A22;
+    --board-bg-2:#132530;
+    --board-amber:#F4B942;
+    --board-amber-dim:#8a6a26;
+    --navy:#12202B;
+    --steel:#3E6D8E;
+    --green:#2E8B57;
+    --amber:#E7A33E;
+    --red:#C0392B;
+    --ink:#17242C;
+    --ink-soft:#5B6B72;
+    --border:#DADFDA;
+    --border-soft:#E7EAE6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg-main);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  .app{max-width:1180px;margin:0 auto;padding:0 20px 60px;}
+  .setup-banner{display:none;background:#fdecea;border:1px solid #e6a19a;color:#7a2e24;font-size:13px;line-height:1.6;padding:14px 18px;border-radius:8px;margin:20px 0;}
+  .setup-banner.show{display:block;}
+  .setup-banner code{background:#fff;padding:1px 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+
+  .topbar{background:var(--navy);color:#fff;padding:20px 20px 0;margin:0 -20px 0;}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:0 20px;}
+  .brand-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;letter-spacing:0.4px;display:flex;align-items:center;gap:10px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--board-amber);box-shadow:0 0 8px var(--board-amber);animation:pulse 2s infinite;flex-shrink:0;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .brand-sub{font-size:11.5px;color:#9FB2BC;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+  .zone-tag{font-size:10px;background:#1c3444;color:var(--board-amber);padding:2px 8px;border-radius:3px;letter-spacing:0.6px;font-weight:600;margin-left:2px;}
+  .clock{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--board-amber);text-align:right;}
+  .clock .lbl{color:#9FB2BC;font-size:9.5px;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+  .tabs{display:flex;gap:2px;margin-top:18px;}
+  .tab-btn{background:transparent;border:none;color:#9FB2BC;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.3px;padding:12px 20px;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
+  .tab-btn:hover{color:#fff;}
+  .tab-btn.active{color:var(--board-amber);border-bottom-color:var(--board-amber);}
+
+  .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 18px;}
+  .subtab-btn{background:var(--bg-panel);border:1px solid var(--border);color:var(--ink-soft);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;letter-spacing:0.2px;padding:9px 15px;border-radius:20px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .subtab-btn:hover{border-color:var(--steel);color:var(--steel);}
+  .subtab-btn.active{background:var(--navy);color:var(--board-amber);border-color:var(--navy);}
+
+  @media(max-width:700px){
+    .app{padding:0 12px 40px;}
+    .topbar{padding:16px 12px 0;margin:0 -12px 0;}
+    .brand{font-size:17px;}
+    .brand .dot{width:8px;height:8px;}
+    .brand-sub{font-size:10px;}
+    .clock{font-size:11px;}
+    .tabs{margin-top:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .tab-btn{padding:10px 14px;font-size:13px;flex:0 0 auto;}
+    .subtabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px -12px 16px;padding:0 12px 4px;scrollbar-width:thin;}
+    .subtab-btn{flex:0 0 auto;padding:11px 16px;font-size:12.5px;min-height:40px;}
+    .panel{padding:16px;border-radius:8px;}
+    .panel-title{font-size:14px;}
+    .btn{padding:12px 18px;font-size:13.5px;min-height:44px;}
+    .form-actions{gap:10px;}
+    .hint{font-size:11.5px;}
+    .summary-grid{grid-template-columns:1fr;gap:12px;}
+    .summary-head{padding:11px 14px;}
+    .summary-row{padding:10px 14px;font-size:12px;}
+    .live-note{font-size:11px;}
+    .zone-tag{font-size:9px;padding:2px 6px;}
+    .clock .lbl{font-size:8.5px;}
+  }
+
+  .page{display:none;padding-top:22px;}
+  .page.active{display:block;}
+  .subpage{display:none;}
+  .subpage.active{display:block;}
+
+  .panel{background:var(--bg-panel);border:1px solid var(--border-soft);border-radius:10px;padding:20px;margin-bottom:18px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin:0 0 14px;color:var(--ink);}
+
+  .quad-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:18px 30px;margin-bottom:6px;}
+  .quad{display:flex;gap:12px;flex-wrap:wrap;align-content:flex-start;min-height:1px;}
+  .quad-tl{grid-column:1;grid-row:1;}
+  .quad-tr{grid-column:2;grid-row:1;}
+  .quad-bl{grid-column:1;grid-row:2;}
+  .quad-br{grid-column:2;grid-row:2;}
+  .quad > div{flex:1 1 140px;min-width:140px;}
+  @media(max-width:700px){.quad-grid{grid-template-columns:1fr;}.quad-tl{grid-row:1;}.quad-tr{grid-row:2;}.quad-bl{grid-row:3;}.quad-br{grid-row:4;}.quad-tr,.quad-br{grid-column:1;}}
+
+  .release-grid{display:flex;gap:26px;align-items:flex-start;margin-bottom:6px;}
+  .release-left{flex:0 0 210px;display:flex;flex-direction:column;gap:14px;}
+  .release-right{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:14px 18px;}
+  @media(max-width:700px){.release-grid{flex-direction:column;}.release-left{flex:0 0 auto;width:100%;}.release-right{width:100%;}}
+  label{font-size:11px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:5px;}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:#FCFCFB;color:var(--ink);}
+  input[type="text"],select{text-transform:uppercase;}
+  input[type="text"]::placeholder{text-transform:none;}
+  input:focus,select:focus{outline:none;border-color:var(--steel);}
+  .dt-pair{display:flex;flex-direction:column;gap:6px;}
+  .dt-pair input[type="date"]{width:100%;}
+  .dt-pair input.time-24{width:100%;font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:1px;}
+  .time-24::placeholder{letter-spacing:0.5px;}
+
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;border:none;border-radius:6px;padding:10px 20px;cursor:pointer;transition:transform .1s;}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-primary:hover{background:#1c3444;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--border);}
+  .form-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .hint{font-size:12px;color:var(--ink-soft);}
+
+  .board{background:var(--board-bg);border-radius:10px;padding:6px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:620px;}
+  th{text-align:left;font-size:10.5px;letter-spacing:1px;color:var(--board-amber-dim);text-transform:uppercase;padding:12px 14px 8px;font-weight:500;}
+  td{padding:11px 14px;font-size:13px;color:#E4E9E6;border-top:1px solid #1E323E;}
+  tr.rowline{cursor:pointer;}
+  tr.rowline:hover td{background:var(--board-bg-2);}
+  .card-item{cursor:pointer;}
+  .traincode{color:var(--board-amber);font-weight:600;letter-spacing:0.5px;}
+  .dim{color:#5C7480;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;font-family:'Inter',sans-serif;white-space:nowrap;}
+  .pill-pending{background:#3a3a3a;color:#B9B9B9;}
+  .pill-s1{background:#1c3d52;color:#7FC4E8;}
+  .pill-s2{background:#4a3a12;color:var(--board-amber);}
+  .pill-s3{background:#123d2c;color:#5FD196;}
+  .pill-s4{background:#1a2b1f;color:#4C8F63;}
+  .empty-row td{color:#5C7480;text-align:center;padding:24px;font-family:'Inter',sans-serif;font-size:13px;}
+  .del-btn{background:transparent;border:1px solid #3a2a2a;color:#c97a72;border-radius:5px;padding:4px 9px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;}
+  .del-btn:hover{background:#3a1616;color:#ff9a90;border-color:#ff9a90;}
+  .card-del-btn{background:transparent;border:1px solid var(--border);color:#a94442;border-radius:5px;padding:3px 9px;font-size:10.5px;font-family:'Inter',sans-serif;cursor:pointer;flex:0 0 auto;}
+  .card-del-btn:hover{background:#fdeceb;border-color:#a94442;}
+
+  .board-cards{display:none;padding:4px;}
+  .card-item{background:var(--board-bg-2);border-radius:8px;padding:13px 14px;margin-bottom:8px;}
+  .card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;}
+  .card-name{color:var(--board-amber);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;letter-spacing:0.3px;}
+  .card-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
+  .card-field .fl{color:#5C7480;text-transform:uppercase;font-size:9px;letter-spacing:0.5px;display:block;margin-bottom:2px;font-family:'Inter',sans-serif;}
+  .card-field .fv{color:#E4E9E6;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .card-empty{color:#5C7480;text-align:center;padding:28px 10px;font-family:'Inter',sans-serif;font-size:13px;}
+
+  @media(max-width:700px){
+    .board{padding:4px;}
+    table{display:none;}
+    .board-cards{display:block;}
+  }
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.2);z-index:99;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .live-note{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .live-note .ld{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+
+  .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(14,26,34,0.55);z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:#fff;border-radius:10px;padding:22px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.25);}
+  .confirm-msg{font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);margin-bottom:18px;line-height:1.5;}
+  .confirm-actions{display:flex;justify-content:flex-end;gap:10px;}
+  .btn-danger{background:#c0392b;color:#fff;}
+  .btn-danger:hover{background:#a5301f;}
+
+  /* Summary page */
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .summary-card{background:var(--bg-panel);border:1px solid var(--border-soft);border-radius:10px;overflow:hidden;}
+  .summary-head{background:var(--navy);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+  .summary-head .name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.3px;}
+  .summary-head .count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--board-amber);}
+  .summary-body{max-height:260px;overflow-y:auto;}
+  .summary-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-top:1px solid var(--border-soft);font-size:12.5px;gap:8px;}
+  .summary-row .sr-name{font-family:'IBM Plex Mono',monospace;color:var(--ink);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .summary-row .sr-time{color:var(--ink-soft);font-size:11px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .summary-empty{padding:20px 16px;color:var(--ink-soft);font-size:12.5px;text-align:center;}
+
+  .rel-groups{padding:4px 0 6px;max-height:340px;overflow-y:auto;}
+  .rel-group{padding:12px 16px 14px;}
+  .rel-group + .rel-group{border-top:2px solid var(--border-soft);}
+  .rel-group-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.6px;padding:3px 10px;border-radius:4px;display:inline-block;margin-bottom:10px;}
+  .rel-group-title .rel-group-total{font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:0;margin-left:2px;}
+  .rel-group-mchp .rel-group-title{background:#FCEFD8;color:#8a5a12;}
+  .rel-group-peqp .rel-group-title{background:#DCE9F0;color:var(--steel);}
+  .rel-group-generic .rel-group-title{background:#E7EAE5;color:var(--navy);}
+  .rel-hopper{margin-bottom:10px;}
+  .rel-hopper:last-child{margin-bottom:0;}
+  .rel-hopper-title{font-size:11px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+  .rel-hopper-title .cnt{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+  .rel-row{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:12.5px;border-top:1px solid var(--border-soft);}
+  .rel-row:first-child{border-top:none;}
+  .rel-num{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:11px;width:18px;flex:0 0 auto;}
+  .rel-name{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rel-time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .rel-time b{color:var(--ink);font-weight:600;}
+  .rel-empty{font-size:11.5px;color:var(--ink-soft);padding:4px 0;font-style:italic;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="setup-banner" id="setup-banner">
+    <b>Setup needed:</b> this page isn't connected to a data source yet. Open this file in a text editor,
+    find the line containing <code>API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"</code>,
+    and replace it with your own deployed Google Apps Script URL. See the setup instructions provided with this file.
+  </div>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-row">
+        <div>
+          <div class="brand"><span class="dot"></span>PARADEEP RAKE TRACKER <span class="zone-tag">ECoR</span></div>
+          <div class="brand-sub">East Coast Railway &middot; Paradeep Port Yard &middot; Live position board</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="text-align:right;">
+            <div class="clock"><span class="lbl">IST (24-HR)</span><span id="clock">--:--:--</span></div>
+            <div style="font-size:9.5px;color:#7A8B93;margin-top:2px;">Synced <span id="last-sync">just now</span></div>
+          </div>
+          <button id="btn-refresh" title="Refresh now" style="background:#1c3444;border:1px solid #2c4a5c;color:var(--board-amber);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:14px;">&#8635;</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-page="summary">Live Tracker</button>
+        <button class="tab-btn" data-page="tracker">Paradeep Entry Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ENTRY DETAILS PAGE ===================== -->
+  <div class="page" id="page-tracker">
+    <div class="subtabs" id="subtabs"></div>
+    <div id="subpages"></div>
+  </div>
+
+  <!-- ===================== LIVE TRACKER (SUMMARY) PAGE ===================== -->
+  <div class="page active" id="page-summary">
+    <div class="live-note" style="justify-content:space-between;">
+      <span><span class="ld"></span> Summary refreshes automatically as entries are added across all six tabs.</span>
+      <button class="btn btn-primary" id="btn-download" style="flex:0 0 auto;">Download PDF</button>
+    </div>
+    <div class="summary-grid" id="summary-grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg">Delete this entry?</div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let charts = {};
+
+// ---------------- Category definitions ----------------
+const CATEGORIES = [
+  { key:'bobrn_release', label:'BOBRN Release',
+    fields:[
+      {key:'rakeName', label:'Rake Name', type:'text'},
+      {key:'sidingCode', label:'Siding Code', type:'select', options:['MCHP','PEQP']},
+      {key:'hopper', label:'Hopper', type:'select', options:['HOPPER 1','HOPPER 2']},
+      {key:'arrival', label:'Arrival', type:'dt'},
+      {key:'madeover', label:'Madeover', type:'dt'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'release', label:'Release', type:'dt'},
+    ],
+    keyField:'rakeName',
+    layoutType:'release',
+    leftExtra:['sidingCode','hopper'],
+    quad:{ tl:['rakeName'], tr:['arrival','madeover'], bl:[], br:['placement','release'] },
+    stages:[
+      {f:'arrival', label:'Arrived', cls:'pill-s1'},
+      {f:'madeover', label:'Madeover', cls:'pill-s2'},
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'release', label:'Released', cls:'pill-s4'},
+    ]
+  },
+  { key:'nbox_release', label:'NBOX Release',
+    fields:[
+      {key:'rakeName', label:'Rake Name', type:'text'},
+      {key:'arrival', label:'Arrival', type:'dt'},
+      {key:'madeover', label:'Madeover', type:'dt'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'release', label:'Release', type:'dt'},
+    ],
+    keyField:'rakeName',
+    layoutType:'release',
+    quad:{ tl:['rakeName'], tr:['arrival','madeover'], bl:[], br:['placement','release'] },
+    stages:[
+      {f:'arrival', label:'Arrived', cls:'pill-s1'},
+      {f:'madeover', label:'Madeover', cls:'pill-s2'},
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'release', label:'Released', cls:'pill-s4'},
+    ]
+  },
+  { key:'bobrn_loading', label:'BOBRN Loading',
+    fields:[
+      {key:'emptyRakeName', label:'Empty Rake Name', type:'text'},
+      {key:'loadRakeName', label:'Load Rake Name', type:'text'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'loadingComplete', label:'Loading Complete', type:'dt'},
+    ],
+    keyField:'emptyRakeName',
+    quad:{ tl:['emptyRakeName'], tr:['placement'], bl:['loadRakeName'], br:['loadingComplete'] },
+    stages:[
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'loadingComplete', label:'Load Complete', cls:'pill-s4'},
+    ]
+  },
+  { key:'nbox_loading', label:'NBOX Loading',
+    fields:[
+      {key:'emptyRakeName', label:'Empty Rake Name', type:'text'},
+      {key:'loadRakeName', label:'Load Rake Name', type:'text'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'loadingComplete', label:'Loading Complete', type:'dt'},
+    ],
+    keyField:'emptyRakeName',
+    quad:{ tl:['emptyRakeName'], tr:['placement'], bl:['loadRakeName'], br:['loadingComplete'] },
+    stages:[
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'loadingComplete', label:'Load Complete', cls:'pill-s4'},
+    ]
+  },
+  { key:'bcn_loading', label:'BCN Loading',
+    fields:[
+      {key:'sidingCode', label:'Siding Code', type:'select', options:['PPL','CONCOR','PICT']},
+      {key:'rakeName', label:'Rake Name', type:'text'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'loadingComplete', label:'Loading Complete', type:'dt'},
+    ],
+    keyField:'rakeName',
+    quad:{ tl:['sidingCode'], tr:['placement'], bl:['rakeName'], br:['loadingComplete'] },
+    stages:[
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'loadingComplete', label:'Load Complete', cls:'pill-s4'},
+    ]
+  },
+  { key:'btpn_loading', label:'BTPN Loading',
+    fields:[
+      {key:'sidingCode', label:'Siding Code', type:'select', options:['IOCL','HPCL']},
+      {key:'rakeName', label:'Rake Name', type:'text'},
+      {key:'placement', label:'Placement', type:'dt'},
+      {key:'loadingComplete', label:'Loading Complete', type:'dt'},
+    ],
+    keyField:'rakeName',
+    quad:{ tl:['sidingCode'], tr:['placement'], bl:['rakeName'], br:['loadingComplete'] },
+    stages:[
+      {f:'placement', label:'Placed', cls:'pill-s2'},
+      {f:'loadingComplete', label:'Load Complete', cls:'pill-s4'},
+    ]
+  },
+];
+
+let DATA = {}; // { category_key: [records] }
+CATEGORIES.forEach(c => DATA[c.key] = []);
+
+function uid(){ return 'r' + Math.random().toString(36).slice(2,10); }
+
+// ---------------- 24-hour date/time helpers ----------------
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+function isoFromParts(dateStr, timeStr){
+  if(!dateStr || !timeStr) return '';
+  if(!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) return '';
+  const d = new Date(`${dateStr}T${timeStr}:00`);
+  if(isNaN(d.getTime())) return '';
+  return d.toISOString();
+}
+function partsFromIso(iso){
+  if(!iso) return {date:'', time:''};
+  const d = new Date(iso);
+  return { date: `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
+}
+function fmtDisplay(iso){
+  if(!iso) return '<span class="dim">&mdash;</span>';
+  const d = new Date(iso);
+  return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())} hrs`;
+}
+function fmtShort(iso){
+  if(!iso) return '&mdash;';
+  const d = new Date(iso);
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtTimeOnly(iso){
+  if(!iso) return '&mdash;';
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function isToday(d){
+  const n = new Date();
+  return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
+}
+// Smart formatter: shows just the time if the date is today (the normal case),
+// but shows the date too the moment it's a different day — so a rake crossing
+// midnight, or a late correction from yesterday, is immediately obvious.
+function fmtSmart(iso){
+  if(!iso) return '&mdash;';
+  const d = new Date(iso);
+  if(isToday(d)) return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// auto-insert colon while typing a 24-hr time box
+function attachTimeAutoformat(input){
+  input.addEventListener('input', ()=>{
+    let v = input.value.replace(/[^0-9:]/g,'');
+    if(v.length===2 && !v.includes(':')) v = v + ':';
+    if(v.length>5) v = v.slice(0,5);
+    input.value = v;
+  });
+}
+
+// ---------------- Storage (Google Apps Script backend) ----------------
+// PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL BELOW, between the quotes.
+// See the setup instructions that came with this file for how to get this URL.
+const API_URL = "https://script.google.com/macros/s/AKfycbw_D2crhwsjYsbyKOaICIxlhxFy6h793QJy2uTgsQ458limJv4uDW-XXJimWLlBvicXGQ/exec";
+
+function apiConfigured(){
+  return API_URL && !API_URL.includes('PASTE_YOUR');
+}
+
+async function loadData(){
+  if(!apiConfigured()){
+    document.getElementById('setup-banner').classList.add('show');
+    return;
+  }
+  try{
+    const res = await fetch(API_URL, { method:'GET' });
+    const parsed = await res.json();
+    CATEGORIES.forEach(c => DATA[c.key] = parsed[c.key] || []);
+  }catch(e){
+    showToast('Could not reach the data source — check your internet connection');
+  }
+}
+
+// Saves ONE record only (not the whole dataset) — the server finds and updates
+// the matching row, or appends a new one, so unrelated entries from other
+// devices are never overwritten.
+async function saveRecordToServer(catKey, keyField, record){
+  if(!apiConfigured()){ showToast('Set up API_URL first — see setup instructions'); return false; }
+  try{
+    await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify({ category: catKey, keyField: keyField, record: record })
+    });
+    return true;
+  }catch(e){
+    showToast('Could not save — check your internet connection and try again');
+    return false;
+  }
+}
+
+async function deleteRecordFromServer(catKey, id){
+  if(!apiConfigured()){ showToast('Set up API_URL first — see setup instructions'); return false; }
+  try{
+    await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify({ category: catKey, action:'delete', id: id })
+    });
+    return true;
+  }catch(e){
+    showToast('Could not delete — check your internet connection and try again');
+    return false;
+  }
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function computeStage(cat, rec){
+  let current = null;
+  cat.stages.forEach(s=>{ if(rec[s.f]) current = s; });
+  return current; // null = pending
+}
+
+function findByKey(cat, value){
+  return DATA[cat.key].find(r => (r[cat.keyField]||'').toLowerCase() === value.trim().toLowerCase());
+}
+
+// ---------------- Build subtabs + subpages ----------------
+function buildTrackerUI(){
+  const subtabsEl = document.getElementById('subtabs');
+  const subpagesEl = document.getElementById('subpages');
+  subtabsEl.innerHTML = CATEGORIES.map((c,i)=>`<button class="subtab-btn ${i===0?'active':''}" data-cat="${c.key}">${c.label}</button>`).join('');
+  subpagesEl.innerHTML = CATEGORIES.map((c,i)=>buildSubpage(c, i===0)).join('');
+
+  subtabsEl.querySelectorAll('.subtab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      subtabsEl.querySelectorAll('.subtab-btn').forEach(b=>b.classList.remove('active'));
+      subpagesEl.querySelectorAll('.subpage').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sp-'+btn.dataset.cat).classList.add('active');
+    });
+  });
+
+  CATEGORIES.forEach(c => wireForm(c));
+}
+
+function renderFieldHtml(cat, fkey){
+  const f = cat.fields.find(x=>x.key===fkey);
+  if(!f) return '';
+  if(f.type==='select'){
+    const opts = f.options.map(o=>`<option value="${o}">${o}</option>`).join('');
+    return `<div>
+      <label>${f.label}</label>
+      <select id="f-${cat.key}-${f.key}">
+        <option value="">-- Select --</option>
+        ${opts}
+      </select>
+    </div>`;
+  }
+  if(f.type==='text'){
+    return `<div>
+      <label>${f.label}</label>
+      <input type="text" data-field="${f.key}" id="f-${cat.key}-${f.key}" placeholder="e.g. ${f.key==='sidingCode' ? 'PPL-01' : cat.label.split(' ')[0]+'-114'}" autocomplete="off"
+        ${f.key===cat.keyField ? `list="dl-${cat.key}"` : ''}>
+      ${f.key===cat.keyField ? `<datalist id="dl-${cat.key}"></datalist>` : ''}
+    </div>`;
+  }
+  return `<div>
+    <label>${f.label}</label>
+    <div class="dt-pair">
+      <input type="date" id="f-${cat.key}-${f.key}-date">
+      <input type="text" class="time-24" id="f-${cat.key}-${f.key}-time" placeholder="HH:MM" maxlength="5">
+    </div>
+  </div>`;
+}
+
+function getBoardColumns(cat){
+  if(cat.layoutType === 'release'){
+    const simple = [cat.keyField, ...(cat.leftExtra||[])].map(k=>cat.fields.find(f=>f.key===k));
+    const combined = [
+      {label:'Arrival / Madeover', keys:['arrival','madeover'], tags:['A','M']},
+      {label:'Placement / Release', keys:['placement','release'], tags:['P','R']},
+    ];
+    return { simple, combined };
+  }
+  return { simple: cat.fields, combined: [] };
+}
+
+function buildSubpage(cat, active){
+  const cols = getBoardColumns(cat);
+  const thead = cols.simple.map(f=>`<th>${f.label}</th>`).join('')
+    + cols.combined.map(c=>`<th>${c.label}</th>`).join('')
+    + '<th>Status</th><th></th>';
+  let formHtml;
+
+  if(cat.layoutType === 'release'){
+    const leftFields = [cat.keyField, ...(cat.leftExtra||[])].map(fk=>renderFieldHtml(cat, fk)).join('');
+    formHtml = `<div class="release-grid">
+      <div class="release-left">${leftFields}</div>
+      <div class="release-right">
+        ${renderFieldHtml(cat,'arrival')}
+        ${renderFieldHtml(cat,'madeover')}
+        ${renderFieldHtml(cat,'placement')}
+        ${renderFieldHtml(cat,'release')}
+      </div>
+    </div>`;
+  } else {
+    const q = cat.quad;
+    const quadHtml = (pos) => `<div class="quad quad-${pos}">${q[pos].map(fk=>renderFieldHtml(cat, fk)).join('')}</div>`;
+    formHtml = `<div class="quad-grid">
+        ${quadHtml('tl')}
+        ${quadHtml('tr')}
+        ${quadHtml('bl')}
+        ${quadHtml('br')}
+      </div>`;
+  }
+
+  return `
+  <div class="subpage ${active?'active':''}" id="sp-${cat.key}">
+    <div class="panel">
+      <div class="panel-title">Update &mdash; ${cat.label}</div>
+      ${formHtml}
+      <div class="form-actions" style="margin-bottom:8px;">
+        <span class="hint">Date boxes default to today — just type the time. Only change the date if a rake's timing crosses midnight.</span>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" data-action="save" data-cat="${cat.key}">Save update</button>
+        <button class="btn btn-ghost" data-action="clear" data-cat="${cat.key}">Clear form</button>
+        <span class="hint" id="hint-${cat.key}">Type an existing ${cat.fields[0].label.toLowerCase()} to update it, or a new one to add a rake.</span>
+      </div>
+    </div>
+    <div class="live-note"><span class="ld"></span> Board refreshes automatically for everyone viewing this page.</div>
+    <div class="panel" style="padding:10px;">
+      <div class="board">
+        <table>
+          <thead><tr>${thead}</tr></thead>
+          <tbody id="board-${cat.key}"></tbody>
+        </table>
+        <div class="board-cards" id="cards-${cat.key}"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wireForm(cat){
+  document.querySelector(`[data-action="save"][data-cat="${cat.key}"]`).addEventListener('click', async ()=>{
+    await saveRecord(cat);
+  });
+  document.querySelector(`[data-action="clear"][data-cat="${cat.key}"]`).addEventListener('click', ()=>{
+    clearForm(cat);
+    showToast('Form cleared');
+  });
+  cat.fields.forEach(f=>{
+    if(f.type==='dt'){
+      attachTimeAutoformat(document.getElementById(`f-${cat.key}-${f.key}-time`));
+      document.getElementById(`f-${cat.key}-${f.key}-date`).value = todayStr();
+    }
+  });
+  // autofill when typing the key field
+  const keyInput = document.getElementById(`f-${cat.key}-${cat.keyField}`);
+  keyInput.addEventListener('change', ()=>{
+    const rec = findByKey(cat, keyInput.value);
+    if(rec){
+      populateFormFromRecord(cat, rec);
+    } else {
+      const hintEl = document.getElementById(`hint-${cat.key}`);
+      hintEl.textContent = `Type an existing ${cat.fields[0].label.toLowerCase()} to update it, or a new one to add a rake.`;
+    }
+  });
+}
+
+function populateFormFromRecord(cat, rec){
+  cat.fields.forEach(f=>{
+    if(f.type==='dt'){
+      const p = partsFromIso(rec[f.key]);
+      document.getElementById(`f-${cat.key}-${f.key}-date`).value = p.date || todayStr();
+      document.getElementById(`f-${cat.key}-${f.key}-time`).value = p.time;
+    } else {
+      document.getElementById(`f-${cat.key}-${f.key}`).value = rec[f.key] || '';
+    }
+  });
+  const hintEl = document.getElementById(`hint-${cat.key}`);
+  if(hintEl) hintEl.textContent = `Editing existing entry "${rec[cat.keyField]}" — fields pre-filled with its last known times. Fill in the next stage and Save.`;
+}
+
+async function saveRecord(cat){
+  const keyVal = document.getElementById(`f-${cat.key}-${cat.keyField}`).value.trim();
+  if(!keyVal){ showToast(`Enter ${cat.fields[0].label} first`); return; }
+
+  // Work off the currently-held local data instead of re-fetching everything —
+  // the periodic refresh already keeps this reasonably fresh, and skipping this
+  // round-trip is what makes Save feel instant.
+  let rec = findByKey(cat, keyVal);
+  const isNew = !rec;
+  if(!rec){ rec = {id:uid()}; DATA[cat.key].push(rec); }
+
+  cat.fields.forEach(f=>{
+    if(f.type==='dt'){
+      const dateV = document.getElementById(`f-${cat.key}-${f.key}-date`).value;
+      const timeV = document.getElementById(`f-${cat.key}-${f.key}-time`).value;
+      if(dateV && timeV){
+        const iso = isoFromParts(dateV, timeV);
+        if(iso) rec[f.key] = iso;
+        else { showToast(`${f.label}: use 24-hr HH:MM, e.g. 14:35`); }
+      }
+    } else {
+      const v = document.getElementById(`f-${cat.key}-${f.key}`).value.trim().toUpperCase();
+      if(v) rec[f.key] = v;
+    }
+  });
+  rec.updatedAt = new Date().toISOString();
+
+  // Reflect the change immediately, then sync to the server in the background.
+  renderBoard(cat);
+  renderSummary();
+  showToast(isNew ? `${keyVal} added to ${cat.label}` : `${keyVal} updated in ${cat.label}`);
+  saveRecordToServer(cat.key, cat.keyField, rec);
+  clearForm(cat);
+}
+
+function clearForm(cat){
+  cat.fields.forEach(f=>{
+    if(f.type==='dt'){
+      document.getElementById(`f-${cat.key}-${f.key}-date`).value = todayStr();
+      document.getElementById(`f-${cat.key}-${f.key}-time`).value = '';
+    } else {
+      document.getElementById(`f-${cat.key}-${f.key}`).value = '';
+    }
+  });
+}
+
+function renderCombinedCell(c, r){
+  const parts = c.keys.map((k,i)=> r[k] ? `${c.tags[i]}: ${fmtSmart(r[k])}` : null).filter(Boolean);
+  return parts.length ? parts.join('<br>') : '&mdash;';
+}
+
+function sortForBoard(cat){
+  const list = [...DATA[cat.key]];
+  if(cat.key === 'bobrn_release'){
+    // Group MCHP together, then PEQP together, then anything unmatched — each group sorted by arrival.
+    const order = {MCHP:0, PEQP:1};
+    return list.sort((a,b)=>{
+      const ga = order[a.sidingCode] ?? 2;
+      const gb = order[b.sidingCode] ?? 2;
+      if(ga !== gb) return ga - gb;
+      return (a.arrival||'').localeCompare(b.arrival||'');
+    });
+  }
+  if(cat.fields.some(f=>f.key==='arrival')){
+    // Release-type categories (has an Arrival field) — sort by first arrival.
+    return list.sort((a,b)=>(a.arrival||'').localeCompare(b.arrival||''));
+  }
+  // Loading categories have no Arrival field — sort by Placement, the earliest stage they do have.
+  return list.sort((a,b)=>(a.placement||'').localeCompare(b.placement||''));
+}
+
+function renderBoard(cat){
+  const cols = getBoardColumns(cat);
+  const body = document.getElementById(`board-${cat.key}`);
+  const cardsEl = document.getElementById(`cards-${cat.key}`);
+  const totalCols = cols.simple.length + cols.combined.length + 2;
+  const sorted = sortForBoard(cat);
+  if(sorted.length===0){
+    body.innerHTML = `<tr class="empty-row"><td colspan="${totalCols}">No entries yet — add one above.</td></tr>`;
+    cardsEl.innerHTML = `<div class="card-empty">No entries yet — add one above.</div>`;
+  } else {
+    body.innerHTML = sorted.map(r=>{
+      const stage = computeStage(cat, r);
+      const pillHtml = stage ? `<span class="pill ${stage.cls}">${stage.label}</span>` : `<span class="pill pill-pending">Pending</span>`;
+      const simpleCells = cols.simple.map(f=>{
+        if(f.type==='dt') return `<td>${fmtSmart(r[f.key])}</td>`;
+        return `<td class="${f.key===cat.keyField?'traincode':'dim'}">${r[f.key]||'&mdash;'}</td>`;
+      }).join('');
+      const combinedCells = cols.combined.map(c=>`<td>${renderCombinedCell(c, r)}</td>`).join('');
+      return `<tr class="rowline" data-row-cat="${cat.key}" data-row-id="${r.id}">${simpleCells}${combinedCells}<td>${pillHtml}</td><td><button class="del-btn" data-del-cat="${cat.key}" data-del-id="${r.id}">Delete</button></td></tr>`;
+    }).join('');
+
+    cardsEl.innerHTML = sorted.map(r=>{
+      const stage = computeStage(cat, r);
+      const pillHtml = stage ? `<span class="pill ${stage.cls}">${stage.label}</span>` : `<span class="pill pill-pending">Pending</span>`;
+      const nameVal = r[cat.keyField] || '—';
+      const simpleOther = cols.simple.filter(f=>f.key!==cat.keyField);
+      const simpleHtml = simpleOther.map(f=>{
+        const val = f.type==='dt' ? fmtSmart(r[f.key]) : (r[f.key] || '&mdash;');
+        return `<div class="card-field"><span class="fl">${f.label}</span><span class="fv">${val}</span></div>`;
+      }).join('');
+      const combinedHtml = cols.combined.map(c=>`<div class="card-field"><span class="fl">${c.label}</span><span class="fv">${renderCombinedCell(c, r)}</span></div>`).join('');
+      return `<div class="card-item" data-row-cat="${cat.key}" data-row-id="${r.id}">
+        <div class="card-top"><span class="card-name">${nameVal}</span>${pillHtml}<button class="card-del-btn" data-del-cat="${cat.key}" data-del-id="${r.id}">Delete</button></div>
+        <div class="card-fields">${simpleHtml}${combinedHtml}</div>
+      </div>`;
+    }).join('');
+  }
+  const dl = document.getElementById(`dl-${cat.key}`);
+  if(dl) dl.innerHTML = DATA[cat.key].map(r=>`<option value="${r[cat.keyField]}">`).join('');
+}
+
+function renderAllBoards(){ CATEGORIES.forEach(renderBoard); }
+
+// ---------------- Summary Paradeep ----------------
+function renderBobrnReleaseCard(cat){
+  const released = DATA[cat.key].filter(r => r.release).length;
+  const shown = DATA[cat.key].filter(r => r.placement);
+  shown.sort((a,b)=> ((a.release||a.placement)||'').localeCompare((b.release||b.placement)||''));
+
+  const groups = {
+    MCHP: { 'HOPPER 1':[], 'HOPPER 2':[] },
+    PEQP: { 'HOPPER 1':[], 'HOPPER 2':[] },
+  };
+  shown.forEach(r=>{
+    const sc = r.sidingCode;
+    const hp = r.hopper;
+    if(groups[sc] && groups[sc][hp]) groups[sc][hp].push(r);
+  });
+
+  const renderHopper = (label, list) => {
+    const rows = list.length===0
+      ? `<div class="rel-empty">No releases yet</div>`
+      : list.map((r,i)=>`<div class="rel-row">
+          <span class="rel-num">${i+1}.</span>
+          <span class="rel-name">${r.rakeName}</span>
+          <span class="rel-time">P: <b>${fmtSmart(r.placement)}</b></span>
+          <span class="rel-time">R: <b>${fmtSmart(r.release)}</b></span>
+        </div>`).join('');
+    return `<div class="rel-hopper">
+      <div class="rel-hopper-title">${label} <span class="cnt">(${list.length})</span></div>
+      ${rows}
+    </div>`;
+  };
+
+  const sidingBlock = (siding) => {
+    const total = groups[siding]['HOPPER 1'].length + groups[siding]['HOPPER 2'].length;
+    return `<div class="rel-group rel-group-${siding.toLowerCase()}">
+    <div class="rel-group-title">${siding} RELEASE <span class="rel-group-total">(${total})</span></div>
+    ${renderHopper('HOPPER 1', groups[siding]['HOPPER 1'])}
+    ${renderHopper('HOPPER 2', groups[siding]['HOPPER 2'])}
+  </div>`;
+  };
+
+  return `<div class="summary-card">
+    <div class="summary-head"><span class="name">${cat.label}</span><span class="count">${released} released</span></div>
+    <div class="rel-groups">
+      ${sidingBlock('MCHP')}
+      ${sidingBlock('PEQP')}
+    </div>
+  </div>`;
+}
+
+function computeNboxStage(r){
+  if(r.release) return 'released';
+  if(r.placement) return 'placed';
+  if(r.madeover) return 'madeover';
+  if(r.arrival) return 'arrived';
+  return null;
+}
+
+function renderNboxReleaseCard(cat){
+  const GROUP_CODES = ['PPAP','OPGP','CBSP','PPTG','DDIP'];
+  const groupOrder = GROUP_CODES.map(c=>'N'+c).concat(['OTHER']);
+  const groups = {}; groupOrder.forEach(g=>groups[g]=[]);
+
+  DATA[cat.key].forEach(r=>{
+    const stage = computeNboxStage(r);
+    if(!stage) return; // nothing entered yet, skip
+    const upper = (r.rakeName||'').toUpperCase();
+    const match = GROUP_CODES.find(c=>upper.includes(c));
+    const g = match ? 'N'+match : 'OTHER';
+    groups[g].push(r);
+  });
+
+  const totalReleased = DATA[cat.key].filter(r=>r.release).length;
+
+  const STAGES = [
+    {key:'released', label:'Released'},
+    {key:'placed', label:'Placed'},
+    {key:'madeover', label:'Madeover'},
+    {key:'arrived', label:'Arrived'},
+  ];
+
+  const renderStageRow = (r,i,stageKey) => {
+    let timeHtml;
+    if(stageKey==='released') timeHtml = `<span class="rel-time">P: <b>${fmtSmart(r.placement)}</b></span><span class="rel-time">R: <b>${fmtSmart(r.release)}</b></span>`;
+    else if(stageKey==='placed') timeHtml = `<span class="rel-time">P: <b>${fmtSmart(r.placement)}</b></span>`;
+    else if(stageKey==='madeover') timeHtml = `<span class="rel-time">A: <b>${fmtSmart(r.arrival)}</b></span><span class="rel-time">M: <b>${fmtSmart(r.madeover)}</b></span>`;
+    else timeHtml = `<span class="rel-time">A: <b>${fmtSmart(r.arrival)}</b></span>`;
+    return `<div class="rel-row"><span class="rel-num">${i+1}.</span><span class="rel-name">${r.rakeName}</span>${timeHtml}</div>`;
+  };
+
+  const renderGroup = (g) => {
+    const recs = groups[g];
+    const groupTotal = recs.length;
+    const stageBlocks = STAGES.map(st=>{
+      const list = recs.filter(r=>computeNboxStage(r)===st.key);
+      if(list.length===0) return '';
+      const rows = list.map((r,i)=>renderStageRow(r,i,st.key)).join('');
+      return `<div class="rel-hopper">
+        <div class="rel-hopper-title">${st.label} <span class="cnt">(${list.length})</span></div>
+        ${rows}
+      </div>`;
+    }).join('');
+    return `<div class="rel-group rel-group-generic">
+      <div class="rel-group-title">${g} <span class="rel-group-total">(${groupTotal})</span></div>
+      ${groupTotal===0 ? `<div class="rel-empty">No entries yet</div>` : stageBlocks}
+    </div>`;
+  };
+
+  return `<div class="summary-card">
+    <div class="summary-head"><span class="name">${cat.label}</span><span class="count">${totalReleased} released</span></div>
+    <div class="rel-groups">
+      ${groupOrder.map(renderGroup).join('')}
+    </div>
+  </div>`;
+}
+
+function renderLoadingSummaryCard(cat){
+  const completedCount = DATA[cat.key].filter(r=>r.loadingComplete).length;
+  const shown = DATA[cat.key].filter(r=>r.placement);
+  shown.sort((a,b)=>((a.loadingComplete||a.placement)||'').localeCompare((b.loadingComplete||b.placement)||''));
+  const rows = shown.length===0
+    ? `<div class="rel-empty" style="padding:14px 16px;">No entries placed yet</div>`
+    : shown.map((r,i)=>`<div class="rel-row" style="padding:7px 16px;">
+        <span class="rel-num">${i+1}.</span>
+        <span class="rel-name">${r[cat.keyField]||'—'}</span>
+        <span class="rel-time">P: <b>${fmtSmart(r.placement)}</b></span>
+        <span class="rel-time">L: <b>${fmtSmart(r.loadingComplete)}</b></span>
+      </div>`).join('');
+  return `<div class="summary-card">
+    <div class="summary-head"><span class="name">${cat.label}</span><span class="count">${completedCount} completed</span></div>
+    <div class="summary-body">${rows}</div>
+  </div>`;
+}
+
+function renderSummary(){
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = CATEGORIES.map(cat=>{
+    if(cat.key === 'bobrn_release') return renderBobrnReleaseCard(cat);
+    if(cat.key === 'nbox_release') return renderNboxReleaseCard(cat);
+    if(['bobrn_loading','nbox_loading','bcn_loading','btpn_loading'].includes(cat.key)) return renderLoadingSummaryCard(cat);
+    const recs = [...DATA[cat.key]].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+    const rows = recs.length===0
+      ? `<div class="summary-empty">No entries yet</div>`
+      : recs.slice(0,8).map(r=>{
+          const stage = computeStage(cat, r);
+          const pillHtml = stage ? `<span class="pill ${stage.cls}">${stage.label}</span>` : `<span class="pill pill-pending">Pending</span>`;
+          return `<div class="summary-row">
+            <span class="sr-name">${r[cat.keyField]||'—'}</span>
+            ${pillHtml}
+            <span class="sr-time">${fmtShort(r.updatedAt)}</span>
+          </div>`;
+        }).join('');
+    return `<div class="summary-card">
+      <div class="summary-head"><span class="name">${cat.label}</span><span class="count">${recs.length} entr${recs.length===1?'y':'ies'}</span></div>
+      <div class="summary-body">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function triggerDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if(!win){
+    try{
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }catch(err){
+      showToast('Download blocked by browser — please allow pop-ups for this page and try again');
+      return;
+    }
+  }
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+}
+
+// ---------------- PDF export (compact, max 2 pages) ----------------
+function pdfTime(iso){ return iso ? fmtShort(iso) : null; }
+
+function bobrnReleaseLines(cat){
+  const lines = [];
+  const shown = DATA[cat.key].filter(r=>r.placement);
+  shown.sort((a,b)=>((a.release||a.placement)||'').localeCompare((b.release||b.placement)||''));
+  const groups = { MCHP:{'HOPPER 1':[], 'HOPPER 2':[]}, PEQP:{'HOPPER 1':[], 'HOPPER 2':[]} };
+  shown.forEach(r=>{ if(groups[r.sidingCode] && groups[r.sidingCode][r.hopper]) groups[r.sidingCode][r.hopper].push(r); });
+  ['MCHP','PEQP'].forEach(siding=>{
+    const total = groups[siding]['HOPPER 1'].length + groups[siding]['HOPPER 2'].length;
+    lines.push({text:`${siding} RELEASE (${total})`, bold:true, size:8.5, gap:2});
+    ['HOPPER 1','HOPPER 2'].forEach(hp=>{
+      const list = groups[siding][hp];
+      lines.push({text:`  ${hp} (${list.length})`, bold:false, size:7, italic:true, color:[90,100,110]});
+      if(list.length===0) lines.push({text:'    No releases yet', size:7, color:[150,150,150]});
+      list.forEach((r,i)=>{
+        const p = pdfTime(r.placement), rl = pdfTime(r.release);
+        lines.push({text:`    ${i+1}. ${r.rakeName}   P:${p||'--'}  R:${rl||'--'}`, size:7});
+      });
+    });
+  });
+  return lines;
+}
+
+function nboxReleaseLines(cat){
+  const lines = [];
+  const GROUP_CODES = ['PPAP','OPGP','CBSP','PPTG','DDIP'];
+  const groupOrder = GROUP_CODES.map(c=>'N'+c).concat(['OTHER']);
+  const groups = {}; groupOrder.forEach(g=>groups[g]=[]);
+  DATA[cat.key].forEach(r=>{
+    const stage = computeNboxStage(r);
+    if(!stage) return;
+    const upper = (r.rakeName||'').toUpperCase();
+    const match = GROUP_CODES.find(c=>upper.includes(c));
+    groups[match ? 'N'+match : 'OTHER'].push(r);
+  });
+  const STAGES = [{key:'released',label:'Released'},{key:'placed',label:'Placed'},{key:'madeover',label:'Madeover'},{key:'arrived',label:'Arrived'}];
+  groupOrder.forEach(g=>{
+    const recs = groups[g];
+    if(recs.length===0) return;
+    lines.push({text:`${g} (${recs.length})`, bold:true, size:8.5, gap:2});
+    STAGES.forEach(st=>{
+      const list = recs.filter(r=>computeNboxStage(r)===st.key);
+      if(list.length===0) return;
+      lines.push({text:`  ${st.label} (${list.length})`, italic:true, size:7, color:[90,100,110]});
+      list.forEach((r,i)=>{
+        let t;
+        if(st.key==='released') t = `P:${pdfTime(r.placement)||'--'}  R:${pdfTime(r.release)||'--'}`;
+        else if(st.key==='placed') t = `P:${pdfTime(r.placement)||'--'}`;
+        else if(st.key==='madeover') t = `A:${pdfTime(r.arrival)||'--'}  M:${pdfTime(r.madeover)||'--'}`;
+        else t = `A:${pdfTime(r.arrival)||'--'}`;
+        lines.push({text:`    ${i+1}. ${r.rakeName}   ${t}`, size:7});
+      });
+    });
+  });
+  return lines;
+}
+
+function loadingLines(cat){
+  const lines = [];
+  const shown = DATA[cat.key].filter(r=>r.placement);
+  shown.sort((a,b)=>((a.loadingComplete||a.placement)||'').localeCompare((b.loadingComplete||b.placement)||''));
+  const completed = DATA[cat.key].filter(r=>r.loadingComplete).length;
+  lines.push({text:`${cat.label} — ${completed} completed`, bold:true, size:8.5, gap:2});
+  if(shown.length===0) lines.push({text:'No entries yet', size:7, color:[150,150,150]});
+  shown.forEach((r,i)=>{
+    const p = pdfTime(r.placement), l = pdfTime(r.loadingComplete);
+    lines.push({text:`  ${i+1}. ${r[cat.keyField]||'—'}   P:${p||'--'}  L:${l||'--'}`, size:7});
+  });
+  return lines;
+}
+
+function drawCompactBox(doc, x, y, w, maxH, title, lines){
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(18,32,43);
+  doc.text(title, x, y);
+  let cy = y + 14;
+  const bottom = y + maxH;
+  let shown = 0;
+  for(const ln of lines){
+    const lh = (ln.size||7) + (ln.gap||1.5);
+    if(cy + lh > bottom){
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(6.5);
+      doc.setTextColor(160,80,70);
+      doc.text(`...+${lines.length - shown} more — see the live Paradeep Tracker for the full list`, x, cy);
+      return;
+    }
+    doc.setFont('helvetica', ln.bold ? 'bold' : (ln.italic ? 'italic' : 'normal'));
+    doc.setFontSize(ln.size||7);
+    const c = ln.color || [23,36,44];
+    doc.setTextColor(c[0],c[1],c[2]);
+    doc.text(ln.text, x, cy);
+    cy += lh;
+    shown++;
+  }
+}
+
+function downloadPdf(){
+  try{
+    if(typeof window.jspdf === 'undefined'){ showToast('PDF library did not load — check your connection and try again'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const now = new Date();
+    const stampStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} hrs`;
+    const margin = 28;
+    const headerH = 46;
+
+    // ---- Page 1: Header + BOBRN Release (left) + NBOX Release (right) ----
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.setTextColor(18,32,43);
+    doc.text('Paradeep Rake Tracker (ECoR) — Live Summary', margin, 26);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(90,100,110);
+    doc.text(`Exported ${stampStr}`, margin, 40);
+
+    const colGap = 20;
+    const colW = (pageWidth - margin*2 - colGap)/2;
+    const boxTop = headerH + 16;
+    const boxH = pageHeight - boxTop - margin;
+
+    const cats = {};
+    CATEGORIES.forEach(c=>cats[c.key]=c);
+
+    drawCompactBox(doc, margin, boxTop, colW, boxH, 'BOBRN RELEASE', bobrnReleaseLines(cats.bobrn_release));
+    drawCompactBox(doc, margin + colW + colGap, boxTop, colW, boxH, 'NBOX RELEASE', nboxReleaseLines(cats.nbox_release));
+
+    // ---- Page 2: 4 Loading categories in a 2x2 grid ----
+    doc.addPage();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.setTextColor(18,32,43);
+    doc.text('Paradeep Rake Tracker (ECoR) — Loading Summary', margin, 26);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(90,100,110);
+    doc.text(`Exported ${stampStr}`, margin, 40);
+
+    const rowGap = 16;
+    const gridColW = (pageWidth - margin*2 - colGap)/2;
+    const gridRowH = (pageHeight - boxTop - margin - rowGap)/2;
+
+    drawCompactBox(doc, margin, boxTop, gridColW, gridRowH, '', loadingLines(cats.bobrn_loading));
+    drawCompactBox(doc, margin + gridColW + colGap, boxTop, gridColW, gridRowH, '', loadingLines(cats.nbox_loading));
+    drawCompactBox(doc, margin, boxTop + gridRowH + rowGap, gridColW, gridRowH, '', loadingLines(cats.bcn_loading));
+    drawCompactBox(doc, margin + gridColW + colGap, boxTop + gridRowH + rowGap, gridColW, gridRowH, '', loadingLines(cats.btpn_loading));
+
+    const fname = `Paradeep_Live_Tracker_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.pdf`;
+    const blob = doc.output('blob');
+    triggerDownload(blob, fname);
+    showToast('Opening PDF — use your browser\'s Download/Save option');
+  }catch(err){
+    showToast('PDF export failed — please try again');
+  }
+}
+
+
+function showConfirmModal(message){
+  return new Promise((resolve)=>{
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-msg').textContent = message;
+    overlay.classList.add('show');
+    const okBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+    const cleanup = (result)=>{
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlay);
+      resolve(result);
+    };
+    const onOk = ()=>cleanup(true);
+    const onCancel = ()=>cleanup(false);
+    const onOverlay = (e)=>{ if(e.target === overlay) cleanup(false); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlay);
+  });
+}
+
+async function deleteRecord(catKey, recId){
+  const cat = CATEGORIES.find(c=>c.key===catKey);
+  const rec = DATA[catKey].find(r=>r.id===recId);
+  if(!rec) return;
+  const label = rec[cat.keyField] || 'this entry';
+  const confirmed = await showConfirmModal(`Delete "${label}" from ${cat.label}? This cannot be undone.`);
+  if(!confirmed) return;
+
+  // Remove it from the screen immediately, then tell the server in the background.
+  DATA[catKey] = DATA[catKey].filter(r=>r.id!==recId);
+  renderBoard(cat);
+  renderSummary();
+  showToast(`${label} deleted from ${cat.label}`);
+  deleteRecordFromServer(catKey, recId);
+}
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-del-cat]');
+  if(btn){
+    deleteRecord(btn.dataset.delCat, btn.dataset.delId);
+    return;
+  }
+  const row = e.target.closest('[data-row-cat]');
+  if(row){
+    const cat = CATEGORIES.find(c=>c.key===row.dataset.rowCat);
+    const rec = DATA[cat.key].find(r=>r.id===row.dataset.rowId);
+    if(cat && rec){
+      populateFormFromRecord(cat, rec);
+      showToast(`Loaded "${rec[cat.keyField]}" — enter its next stage above`);
+      const panel = document.getElementById(`sp-${cat.key}`);
+      if(panel) panel.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+});
+
+// ---------------- Top-level tabs ----------------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('#page-tracker, #page-summary').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+    if(btn.dataset.page === 'summary') renderSummary();
+  });
+});
+
+// ---------------- Clock (24-hour, IST-style display of local time) ----------------
+function tickClock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ---------------- Live polling ----------------
+let lastSyncTime = Date.now();
+async function refreshLoop(){
+  await loadData();
+  renderAllBoards();
+  if(document.getElementById('page-summary').classList.contains('active')) renderSummary();
+  lastSyncTime = Date.now();
+}
+setInterval(refreshLoop, 5000);
+setInterval(()=>{
+  const el = document.getElementById('last-sync');
+  if(!el) return;
+  const secs = Math.round((Date.now()-lastSyncTime)/1000);
+  el.textContent = secs < 3 ? 'just now' : `${secs}s ago`;
+  el.style.color = secs > 20 ? '#e07a6f' : '#7A8B93';
+}, 1000);
+
+// Force an immediate refresh the moment the tab/window regains focus —
+// browsers throttle background-tab timers, so a laptop tab left in the
+// background can otherwise lag behind until this fires.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') refreshLoop();
+});
+window.addEventListener('focus', refreshLoop);
+
+document.getElementById('btn-refresh').addEventListener('click', async ()=>{
+  await refreshLoop();
+  showToast('Refreshed');
+});
+
+// ---------------- Init ----------------
+(async function init(){
+  buildTrackerUI();
+  await loadData();
+  renderAllBoards();
+  renderSummary();
+  document.getElementById('btn-download').addEventListener('click', downloadPdf);
+})();
+</script>
+</body>
+</html>
